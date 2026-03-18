@@ -3,9 +3,9 @@
 
 #include <Arduino.h>
 
-const int ADC_CONVERSION = 4095;        // 12-bit ADC resolution
-const float VOLTAGE_REF = 3.3;          // Reference voltage
-const int VOLTAGE_DIVIDER_RATIO = 5;    // Voltage divider ratio in chip
+const float ADC_CONVERSION = 4095.0;        // 12-bit ADC resolution
+const float VOLTAGE_REF = 3.3;              // Reference voltage
+const float VOLTAGE_DIVIDER_RATIO = 6.25;   // Voltage divider ratio in chip
 
 class VoltageSensor {
 public:

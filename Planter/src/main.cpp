@@ -1,18 +1,18 @@
 #include <Arduino.h>
+#include "voltage_sensor.h"
+#include "pinout.h"
 
-// put function declarations here:
-int myFunction(int, int);
+VoltageSensor sensor(SENSOR_PIN);
 
 void setup() {
-  // put your setup code here, to run once:
-  int result = myFunction(2, 3);
+  Serial.begin(9600);
 }
 
 void loop() {
-  // put your main code here, to run repeatedly:
-}
+  Serial.println("\nADC READING: ");
+  Serial.println(analogRead(SENSOR_PIN));
 
-// put function definitions here:
-int myFunction(int x, int y) {
-  return x + y;
+  Serial.println("\nVOLTAGE READING: ");
+  Serial.println(sensor.take_reading());
+  delay(1000);
 }
