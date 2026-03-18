@@ -1,4 +1,4 @@
-#ifdef MOISTURE_SENSOR_H
+#ifndef MOISTURE_SENSOR_H
 #define MOISTURE_SENSOR_H
 
 #include <Arduino.h>
@@ -42,7 +42,7 @@ private:
     /* Take a smoothened reading from the sensor
         Input: none
         Returns: an average analog reading from the sensor over cycles */
-    void smoothened_reading();
+    float smoothened_reading();
 };
 
 #endif // MOISTURE_SENSOR_H
