@@ -18,10 +18,6 @@ void setup() {
 }
 
 void loop() {
-  Serial.println("Battery Voltage: ");
-  Serial.println(battery_sensor.take_reading());
-
-  Serial.println("Solar Voltage: ");
-  Serial.println(solar_sensor.take_reading());
+  transmitter.send_data(5, 6, 50);
   delay(1000);
 }
