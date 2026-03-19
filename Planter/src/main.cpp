@@ -14,6 +14,7 @@ Transmitter     transmitter(DEVICE_NAME);
 
 void setup() {
   Serial.begin(9600);
+  transmitter.init();
 }
 
 void loop() {
