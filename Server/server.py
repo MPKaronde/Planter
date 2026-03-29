@@ -3,23 +3,22 @@ import time
 import csv
 import os
 import datetime
-import smtplib
-from email.message import EmailMessage
+import subprocess
 
 app = Flask(__name__)
 
-# Store received data in memory
+# In-memory storage of recent data
 data_store = []
 
-# CSV file for long-term storage
+# CSV for long-term storage
 CSV_FILE = "plant_data.csv"
 
 # Moisture thresholds
-MOISTURE_TOO_LOW = 30  # below this -> alert
-MOISTURE_WARNING = 40  # between warning and low
-MOISTURE_OK_HIGH = 70  # above this -> too wet
+MOISTURE_TOO_LOW = 30
+MOISTURE_WARNING = 40
+MOISTURE_OK_HIGH = 70
 
-# Email cooldown per device (minutes)
+# Email cooldown (seconds)
 EMAIL_COOLDOWN = 10
 last_alert_time = {}
 
@@ -29,23 +28,23 @@ if not os.path.exists(CSV_FILE):
         writer = csv.writer(f)
         writer.writerow(["timestamp", "device_name", "battery_voltage", "solar_voltage", "moisture_percentage"])
 
-# --- Email sending function ---
+# --- Email function using msmtp subprocess ---
 def send_moisture_alert(device_name, moisture_value):
-    msg = EmailMessage()
-    msg['Subject'] = f"⚠️ Moisture Alert for {device_name}"
-    msg['From'] = "yourpotemail@gmail.com"       # Replace with your sender email
-    msg['To'] = "recipient@example.com"          # Replace with recipient email
-    msg.set_content(f"Moisture level for {device_name} is too low: {moisture_value}%.")
+    sender = "yourpotemail@gmail.com"       # Replace with your sending email
+    recipient = "recipient@example.com"     # Replace with recipient email
+    subject = f"⚠️ Moisture Alert for {device_name}"
+    body = f"Moisture level for {device_name} is too low: {moisture_value}%."
+
+    # Construct shell command for msmtp
+    cmd = f'echo "{body}" | msmtp --subject="{subject}" --from={sender} {recipient}'
 
     try:
-        with smtplib.SMTP('localhost') as smtp:   # Uses msmtp configured on Raspberry Pi
-            smtp.send_message(msg)
+        subprocess.run(cmd, shell=True, check=True)
         print(f"[EMAIL SENT] {device_name} moisture {moisture_value}%")
-    except Exception as e:
+    except subprocess.CalledProcessError as e:
         print("[EMAIL ERROR]", e)
 
 # --- Routes ---
-
 @app.route('/data', methods=['POST'])
 def receive_data():
     data = request.get_json()
@@ -60,6 +59,7 @@ def receive_data():
         "moisture_percentage": float(data.get("moisture_percentage", 0))
     }
 
+    # Store in memory
     data_store.append(entry)
 
     # Append to CSV
@@ -72,7 +72,7 @@ def receive_data():
 
     print("[DATA RECEIVED]", entry)
 
-    # Check moisture for email alert
+    # --- Moisture alert with cooldown ---
     device = entry["device_name"]
     now = datetime.datetime.now()
     send_alert = False
@@ -97,7 +97,7 @@ def get_data():
 
 @app.route('/data-view')
 def data_view():
-    # Load CSV data for display
+    # Load CSV for long-term display
     csv_data = []
     if os.path.exists(CSV_FILE):
         with open(CSV_FILE, newline="") as f:
@@ -110,11 +110,10 @@ def data_view():
 def index():
     return render_template('home.html', data=data_store)
 
-# --- Sunlight placeholder endpoint ---
 @app.route('/sunlight-data')
 def sunlight_data():
-    # Example dummy data; replace with real calculation if you have solar sensor data
-    weekly = {f"Day {i+1}": round(5 + i*0.5,1) for i in range(7)}  # 7 days sunlight hours
+    # Dummy example data
+    weekly = {f"Day {i+1}": round(5 + i*0.5,1) for i in range(7)}
     today_hours = 6.5
     return jsonify({"weekly": weekly, "today_hours": today_hours})
 
