@@ -2,6 +2,7 @@ from flask import Flask, request, jsonify, render_template
 import time
 import csv
 import os
+from datetime import datetime, timedelta
 
 app = Flask(__name__)
 
@@ -10,19 +11,21 @@ app = Flask(__name__)
 # ----------------------------
 MAX_ENTRIES = 100
 LOG_FILE = "data_log.csv"
+SOLAR_THRESHOLD = 3.0  # V considered sunlight
+READING_INTERVAL_SEC = 10  # Approximate interval between sensor posts for sunlight calculation
 
 # ----------------------------
-# DATA STORE (in-memory for dashboard)
+# IN-MEMORY DASHBOARD DATA
 # ----------------------------
 data_store = []
 
-# Ensure CSV file exists
+# Ensure CSV exists
 if not os.path.exists(LOG_FILE):
     with open(LOG_FILE, mode='w', newline='') as f:
         writer = csv.writer(f)
         writer.writerow(["timestamp", "device_name", "battery_voltage", "solar_voltage", "moisture_percentage"])
 
-# Load last MAX_ENTRIES for dashboard
+# Load last MAX_ENTRIES from CSV
 if os.path.exists(LOG_FILE):
     with open(LOG_FILE, newline='') as f:
         reader = csv.DictReader(f)
@@ -43,6 +46,7 @@ if os.path.exists(LOG_FILE):
 def receive_data():
     data = request.get_json()
     if data:
+        # Use server timestamp
         data['timestamp'] = time.strftime("%H:%M:%S")
         data_store.append(data)
         if len(data_store) > MAX_ENTRIES:
@@ -59,9 +63,6 @@ def receive_data():
                 data.get('moisture_percentage', '')
             ])
 
-        print("\n--- Received Data ---")
-        print(data)
-
     return jsonify({"status": "ok"}), 200
 
 @app.route('/data', methods=['GET'])
@@ -70,7 +71,7 @@ def get_data():
 
 @app.route('/')
 def index():
-    return render_template('index.html')  # Home page with graphs and alert banner
+    return render_template('index.html')  # Home page with graphs
 
 @app.route('/data-view')
 def data_view():
@@ -80,7 +81,6 @@ def data_view():
         with open(LOG_FILE, newline='') as f:
             reader = csv.DictReader(f)
             for row in reader:
-                # Keep as string for display; avoids template crashes
                 safe_row = {
                     "timestamp": row.get("timestamp", ""),
                     "device_name": row.get("device_name", ""),
@@ -90,6 +90,33 @@ def data_view():
                 }
                 all_data.append(safe_row)
     return render_template('data.html', data=all_data)
+
+@app.route('/sunlight-data')
+def sunlight_data():
+    """Compute hours of sunlight today and last 7 days"""
+    sunlight_counts = {}  # date_str -> number of sunlight readings
+    now = datetime.now()
+
+    last_7_days = [(now - timedelta(days=i)).date() for i in reversed(range(7))]
+
+    for row in data_store:
+        try:
+            solar = float(row['solar_voltage'])
+        except (ValueError, TypeError):
+            continue
+        ts = datetime.now().date()  # Use server timestamp as date
+
+        # Count sunlight if above threshold
+        if solar >= SOLAR_THRESHOLD:
+            sunlight_counts[ts] = sunlight_counts.get(ts, 0) + 1
+
+    # Convert counts to hours
+    sunlight_hours = {day.strftime("%Y-%m-%d"): sunlight_counts.get(day, 0) * READING_INTERVAL_SEC / 3600 for day in last_7_days}
+
+    return jsonify({
+        "today_hours": sunlight_hours.get(now.strftime("%Y-%m-%d"), 0),
+        "weekly": sunlight_hours
+    })
 
 # ----------------------------
 # START SERVER

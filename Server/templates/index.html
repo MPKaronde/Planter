@@ -16,20 +16,29 @@
 <body>
 <h1>🌱 Plant Monitor Dashboard</h1>
 <a href="/">Home</a> | <a href="/data-view">Data Table</a>
+
 <div id="alert">Loading...</div>
+
 <div class="chart-container">
     <canvas id="solarChart"></canvas>
 </div>
 <div class="chart-container">
     <canvas id="moistureChart"></canvas>
 </div>
+
+<div style="font-size: 30px; margin: 20px;">☀️ Hours of sunlight today: <span id="sunlight-today">0</span> h</div>
+<div class="chart-container">
+    <canvas id="sunlightChart"></canvas>
+</div>
+
 <script>
 const MOISTURE_TOO_LOW = 30;
 const MOISTURE_WARNING = 40;
 const MOISTURE_OK_LOW = 40;
 const MOISTURE_OK_HIGH = 70;
 const MOISTURE_TOO_HIGH = 70;
-let solarChart, moistureChart;
+
+let solarChart, moistureChart, sunlightChart;
 
 async function loadData() {
     const res = await fetch('/data');
@@ -40,7 +49,7 @@ async function loadData() {
     const solar = data.map(d => d.solar_voltage);
     const moisture = data.map(d => d.moisture_percentage);
 
-    // Banner
+    // Moisture banner
     const latestMoisture = moisture[moisture.length-1];
     const alertBox = document.getElementById("alert");
     if (latestMoisture < MOISTURE_TOO_LOW) {
@@ -53,7 +62,7 @@ async function loadData() {
         alertBox.textContent = "✅ AOK"; alertBox.style.background = "green"; alertBox.style.color = "white"; alertBox.style.animation = "none";
     }
 
-    // Solar chart
+    // Solar line chart
     if (!solarChart) {
         solarChart = new Chart(document.getElementById('solarChart'), {
             type: 'line', data: { labels: times, datasets: [{ label: 'Solar Voltage (V)', data: solar, borderColor: 'orange', borderWidth: 2, tension: 0.3, fill: false }] },
@@ -61,7 +70,7 @@ async function loadData() {
         });
     } else { solarChart.data.labels = times; solarChart.data.datasets[0].data = solar; solarChart.update(); }
 
-    // Moisture chart
+    // Moisture line chart
     if (!moistureChart) {
         moistureChart = new Chart(document.getElementById('moistureChart'), {
             type: 'line', data: { labels: times, datasets: [{ label: 'Moisture (%)', data: moisture, borderColor: 'blue', borderWidth: 2, tension: 0.3, fill: false }] },
@@ -70,8 +79,34 @@ async function loadData() {
     } else { moistureChart.data.labels = times; moistureChart.data.datasets[0].data = moisture; moistureChart.update(); }
 }
 
+async function loadSunlightData() {
+    const res = await fetch('/sunlight-data');
+    const data = await res.json();
+    document.getElementById('sunlight-today').textContent = data.today_hours.toFixed(1);
+
+    const labels = Object.keys(data.weekly);
+    const hours = Object.values(data.weekly);
+
+    if (!sunlightChart) {
+        sunlightChart = new Chart(document.getElementById('sunlightChart'), {
+            type: 'bar',
+            data: {
+                labels: labels,
+                datasets: [{ label: 'Hours of Sunlight', data: hours, backgroundColor: 'goldenrod' }]
+            },
+            options: { responsive: true, maintainAspectRatio: false, scales: { y: { beginAtZero: true } } }
+        });
+    } else {
+        sunlightChart.data.labels = labels;
+        sunlightChart.data.datasets[0].data = hours;
+        sunlightChart.update();
+    }
+}
+
 setInterval(loadData, 2000);
+setInterval(loadSunlightData, 60000);
 loadData();
+loadSunlightData();
 </script>
 </body>
 </html>
