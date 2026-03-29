@@ -14,13 +14,14 @@
         a {
             margin: 10px;
             display: inline-block;
+            font-size: 18px;
         }
 
-        canvas {
-            max-width: 800px;
-            margin: 20px auto;
+        h1 {
+            margin-bottom: 10px;
         }
 
+        /* 🚨 Alert box */
         #alert {
             display: none;
             font-size: 40px;
@@ -28,7 +29,8 @@
             color: white;
             background: red;
             padding: 20px;
-            margin: 20px;
+            margin: 20px auto;
+            width: 80%;
             animation: flash 1s infinite;
         }
 
@@ -36,6 +38,18 @@
             0% { opacity: 1; }
             50% { opacity: 0.2; }
             100% { opacity: 1; }
+        }
+
+        /* 📈 Chart containers */
+        .chart-container {
+            width: 90%;
+            height: 400px;
+            margin: 40px auto;
+        }
+
+        canvas {
+            width: 100% !important;
+            height: 100% !important;
         }
     </style>
 </head>
@@ -49,11 +63,16 @@
 
 <div id="alert">⚠️ LOW MOISTURE ⚠️</div>
 
-<canvas id="solarChart"></canvas>
-<canvas id="moistureChart"></canvas>
+<div class="chart-container">
+    <canvas id="solarChart"></canvas>
+</div>
+
+<div class="chart-container">
+    <canvas id="moistureChart"></canvas>
+</div>
 
 <script>
-const MOISTURE_THRESHOLD = 30;
+const MOISTURE_THRESHOLD = 35;
 
 let solarChart, moistureChart;
 
@@ -67,7 +86,7 @@ async function loadData() {
     let solar = data.map(d => d.solar_voltage);
     let moisture = data.map(d => d.moisture_percentage);
 
-    // 🚨 ALERT
+    // 🚨 ALERT LOGIC
     let latestMoisture = moisture[moisture.length - 1];
     let alertBox = document.getElementById("alert");
 
@@ -87,8 +106,14 @@ async function loadData() {
                     label: 'Solar Voltage (V)',
                     data: solar,
                     borderColor: 'orange',
+                    borderWidth: 2,
+                    tension: 0.3,
                     fill: false
                 }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false
             }
         });
     } else {
@@ -107,8 +132,14 @@ async function loadData() {
                     label: 'Moisture (%)',
                     data: moisture,
                     borderColor: 'blue',
+                    borderWidth: 2,
+                    tension: 0.3,
                     fill: false
                 }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false
             }
         });
     } else {
