@@ -21,17 +21,15 @@
             margin-bottom: 10px;
         }
 
-        /* 🚨 Alert box */
+        /* Banner styles */
         #alert {
-            display: none;
+            display: block;
             font-size: 40px;
             font-weight: bold;
             color: white;
-            background: red;
             padding: 20px;
             margin: 20px auto;
             width: 80%;
-            animation: flash 1s infinite;
         }
 
         @keyframes flash {
@@ -40,7 +38,7 @@
             100% { opacity: 1; }
         }
 
-        /* 📈 Chart containers */
+        /* Chart containers */
         .chart-container {
             width: 90%;
             height: 400px;
@@ -61,7 +59,7 @@
 <a href="/">Home</a> | 
 <a href="/data-view">Data Table</a>
 
-<div id="alert">⚠️ LOW MOISTURE ⚠️</div>
+<div id="alert">Loading...</div>
 
 <div class="chart-container">
     <canvas id="solarChart"></canvas>
@@ -72,10 +70,15 @@
 </div>
 
 <script>
-const MOISTURE_THRESHOLD = 35;
+/* ---------------- Thresholds ---------------- */
+const MOISTURE_TOO_LOW = 30;     // flashing red "Too Dry"
+const MOISTURE_WARNING = 40;     // yellow "Low Moisture"
+const MOISTURE_TOO_HIGH = 70;    // flashing red "Too Wet"
 
+/* ---------------- Chart Variables ---------------- */
 let solarChart, moistureChart;
 
+/* ---------------- Load Data ---------------- */
 async function loadData() {
     let res = await fetch('/data');
     let data = await res.json();
@@ -86,73 +89,16 @@ async function loadData() {
     let solar = data.map(d => d.solar_voltage);
     let moisture = data.map(d => d.moisture_percentage);
 
-    // 🚨 ALERT LOGIC
+    /* ---------------- Banner Logic ---------------- */
     let latestMoisture = moisture[moisture.length - 1];
     let alertBox = document.getElementById("alert");
 
-    if (latestMoisture < MOISTURE_THRESHOLD) {
-        alertBox.style.display = "block";
-    } else {
-        alertBox.style.display = "none";
-    }
-
-    // 📈 SOLAR CHART
-    if (!solarChart) {
-        solarChart = new Chart(document.getElementById('solarChart'), {
-            type: 'line',
-            data: {
-                labels: times,
-                datasets: [{
-                    label: 'Solar Voltage (V)',
-                    data: solar,
-                    borderColor: 'orange',
-                    borderWidth: 2,
-                    tension: 0.3,
-                    fill: false
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false
-            }
-        });
-    } else {
-        solarChart.data.labels = times;
-        solarChart.data.datasets[0].data = solar;
-        solarChart.update();
-    }
-
-    // 💧 MOISTURE CHART
-    if (!moistureChart) {
-        moistureChart = new Chart(document.getElementById('moistureChart'), {
-            type: 'line',
-            data: {
-                labels: times,
-                datasets: [{
-                    label: 'Moisture (%)',
-                    data: moisture,
-                    borderColor: 'blue',
-                    borderWidth: 2,
-                    tension: 0.3,
-                    fill: false
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false
-            }
-        });
-    } else {
-        moistureChart.data.labels = times;
-        moistureChart.data.datasets[0].data = moisture;
-        moistureChart.update();
-    }
-}
-
-// Refresh every 2 seconds
-setInterval(loadData, 2000);
-loadData();
-</script>
-
-</body>
-</html>
+    if (latestMoisture < MOISTURE_TOO_LOW) {
+        alertBox.textContent = "⚠️ TOO DRY ⚠️";
+        alertBox.style.background = "red";
+        alertBox.style.color = "white";
+        alertBox.style.animation = "flash 1s infinite";
+    } else if (latestMoisture > MOISTURE_TOO_HIGH) {
+        alertBox.textContent = "⚠️ TOO WET ⚠️";
+        alertBox.style.background = "red";
+        alertBox.style
