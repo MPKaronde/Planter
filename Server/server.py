@@ -18,8 +18,8 @@ MOISTURE_TOO_LOW = 30
 MOISTURE_WARNING = 40
 MOISTURE_OK_HIGH = 70
 
-# Email cooldown (seconds)
-EMAIL_COOLDOWN = 10
+# Email cooldown (minutes) to prevent spamming
+EMAIL_COOLDOWN = 5
 last_alert_time = {}
 
 # --- Configure your emails here ---
@@ -90,7 +90,7 @@ def receive_data():
         if device not in last_alert_time:
             send_alert = True
         else:
-            elapsed = (now - last_alert_time[device]).total_seconds()
+            elapsed = (now - last_alert_time[device]).total_seconds() / 60
             if elapsed >= EMAIL_COOLDOWN:
                 send_alert = True
         if send_alert:
