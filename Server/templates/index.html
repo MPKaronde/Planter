@@ -19,6 +19,11 @@
 
 <div id="alert">Loading...</div>
 
+<div style="font-size: 30px; margin: 20px;">☀️ Hours of sunlight today: <span id="sunlight-today">0</span> h</div>
+<div class="chart-container">
+    <canvas id="sunlightChart"></canvas>
+</div>
+
 <div class="chart-container">
     <canvas id="solarChart"></canvas>
 </div>
@@ -26,10 +31,7 @@
     <canvas id="moistureChart"></canvas>
 </div>
 
-<div style="font-size: 30px; margin: 20px;">☀️ Hours of sunlight today: <span id="sunlight-today">0</span> h</div>
-<div class="chart-container">
-    <canvas id="sunlightChart"></canvas>
-</div>
+
 
 <script>
 const MOISTURE_TOO_LOW = 30;
