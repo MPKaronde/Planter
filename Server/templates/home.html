@@ -21,15 +21,16 @@
             margin-bottom: 10px;
         }
 
-        /* Banner styles */
+        /* Alert banner */
         #alert {
-            display: block;
             font-size: 40px;
             font-weight: bold;
             color: white;
             padding: 20px;
             margin: 20px auto;
             width: 80%;
+            display: block;
+            border-radius: 8px;
         }
 
         @keyframes flash {
@@ -70,28 +71,27 @@
 </div>
 
 <script>
-/* ---------------- Thresholds ---------------- */
-const MOISTURE_TOO_LOW = 30;     // flashing red "Too Dry"
-const MOISTURE_WARNING = 40;     // yellow "Low Moisture"
-const MOISTURE_TOO_HIGH = 70;    // flashing red "Too Wet"
+const MOISTURE_TOO_LOW = 30;   // Red flashing if below
+const MOISTURE_WARNING = 40;   // Yellow warning
+const MOISTURE_OK_LOW = 40;    // Green OK range lower bound
+const MOISTURE_OK_HIGH = 70;   // Green OK range upper bound
+const MOISTURE_TOO_HIGH = 70;  // Red flashing if above
 
-/* ---------------- Chart Variables ---------------- */
 let solarChart, moistureChart;
 
-/* ---------------- Load Data ---------------- */
 async function loadData() {
-    let res = await fetch('/data');
-    let data = await res.json();
+    const res = await fetch('/data');
+    const data = await res.json();
 
     if (data.length === 0) return;
 
-    let times = data.map(d => d.timestamp);
-    let solar = data.map(d => d.solar_voltage);
-    let moisture = data.map(d => d.moisture_percentage);
+    const times = data.map(d => d.timestamp);
+    const solar = data.map(d => d.solar_voltage);
+    const moisture = data.map(d => d.moisture_percentage);
 
-    /* ---------------- Banner Logic ---------------- */
-    let latestMoisture = moisture[moisture.length - 1];
-    let alertBox = document.getElementById("alert");
+    // Banner logic
+    const latestMoisture = moisture[moisture.length - 1];
+    const alertBox = document.getElementById("alert");
 
     if (latestMoisture < MOISTURE_TOO_LOW) {
         alertBox.textContent = "⚠️ TOO DRY ⚠️";
@@ -101,4 +101,77 @@ async function loadData() {
     } else if (latestMoisture > MOISTURE_TOO_HIGH) {
         alertBox.textContent = "⚠️ TOO WET ⚠️";
         alertBox.style.background = "red";
-        alertBox.style
+        alertBox.style.color = "white";
+        alertBox.style.animation = "flash 1s infinite";
+    } else if (latestMoisture < MOISTURE_WARNING) {
+        alertBox.textContent = "⚠️ LOW MOISTURE ⚠️";
+        alertBox.style.background = "yellow";
+        alertBox.style.color = "black";
+        alertBox.style.animation = "none";
+    } else {
+        alertBox.textContent = "✅ AOK";
+        alertBox.style.background = "green";
+        alertBox.style.color = "white";
+        alertBox.style.animation = "none";
+    }
+
+    // Solar chart
+    if (!solarChart) {
+        solarChart = new Chart(document.getElementById('solarChart'), {
+            type: 'line',
+            data: {
+                labels: times,
+                datasets: [{
+                    label: 'Solar Voltage (V)',
+                    data: solar,
+                    borderColor: 'orange',
+                    borderWidth: 2,
+                    tension: 0.3,
+                    fill: false
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false
+            }
+        });
+    } else {
+        solarChart.data.labels = times;
+        solarChart.data.datasets[0].data = solar;
+        solarChart.update();
+    }
+
+    // Moisture chart
+    if (!moistureChart) {
+        moistureChart = new Chart(document.getElementById('moistureChart'), {
+            type: 'line',
+            data: {
+                labels: times,
+                datasets: [{
+                    label: 'Moisture (%)',
+                    data: moisture,
+                    borderColor: 'blue',
+                    borderWidth: 2,
+                    tension: 0.3,
+                    fill: false
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false
+            }
+        });
+    } else {
+        moistureChart.data.labels = times;
+        moistureChart.data.datasets[0].data = moisture;
+        moistureChart.update();
+    }
+}
+
+// Refresh every 2 seconds
+setInterval(loadData, 2000);
+loadData();
+</script>
+
+</body>
+</html>
