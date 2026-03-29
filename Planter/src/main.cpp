@@ -18,6 +18,6 @@ void setup() {
 }
 
 void loop() {
-  transmitter.send_data(5, 6, 50);
+  transmitter.send_data(battery_sensor.take_reading(), solar_sensor.take_reading(), moisture_sensor.take_reading());
   delay(1000);
 }

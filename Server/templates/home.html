@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Plant Dashboard</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <style>
+        body {
+            font-family: Arial;
+            text-align: center;
+            margin: 20px;
+        }
+
+        a {
+            margin: 10px;
+            display: inline-block;
+        }
+
+        canvas {
+            max-width: 800px;
+            margin: 20px auto;
+        }
+
+        #alert {
+            display: none;
+            font-size: 40px;
+            font-weight: bold;
+            color: white;
+            background: red;
+            padding: 20px;
+            margin: 20px;
+            animation: flash 1s infinite;
+        }
+
+        @keyframes flash {
+            0% { opacity: 1; }
+            50% { opacity: 0.2; }
+            100% { opacity: 1; }
+        }
+    </style>
+</head>
+
+<body>
+
+<h1>🌱 Plant Monitor Dashboard</h1>
+
+<a href="/">Home</a> | 
+<a href="/data-view">Data Table</a>
+
+<div id="alert">⚠️ LOW MOISTURE ⚠️</div>
+
+<canvas id="solarChart"></canvas>
+<canvas id="moistureChart"></canvas>
+
+<script>
+const MOISTURE_THRESHOLD = 30;
+
+let solarChart, moistureChart;
+
+async function loadData() {
+    let res = await fetch('/data');
+    let data = await res.json();
+
+    if (data.length === 0) return;
+
+    let times = data.map(d => d.timestamp);
+    let solar = data.map(d => d.solar_voltage);
+    let moisture = data.map(d => d.moisture_percentage);
+
+    // 🚨 ALERT
+    let latestMoisture = moisture[moisture.length - 1];
+    let alertBox = document.getElementById("alert");
+
+    if (latestMoisture < MOISTURE_THRESHOLD) {
+        alertBox.style.display = "block";
+    } else {
+        alertBox.style.display = "none";
+    }
+
+    // 📈 SOLAR CHART
+    if (!solarChart) {
+        solarChart = new Chart(document.getElementById('solarChart'), {
+            type: 'line',
+            data: {
+                labels: times,
+                datasets: [{
+                    label: 'Solar Voltage (V)',
+                    data: solar,
+                    borderColor: 'orange',
+                    fill: false
+                }]
+            }
+        });
+    } else {
+        solarChart.data.labels = times;
+        solarChart.data.datasets[0].data = solar;
+        solarChart.update();
+    }
+
+    // 💧 MOISTURE CHART
+    if (!moistureChart) {
+        moistureChart = new Chart(document.getElementById('moistureChart'), {
+            type: 'line',
+            data: {
+                labels: times,
+                datasets: [{
+                    label: 'Moisture (%)',
+                    data: moisture,
+                    borderColor: 'blue',
+                    fill: false
+                }]
+            }
+        });
+    } else {
+        moistureChart.data.labels = times;
+        moistureChart.data.datasets[0].data = moisture;
+        moistureChart.update();
+    }
+}
+
+// Refresh every 2 seconds
+setInterval(loadData, 2000);
+loadData();
+</script>
+
+</body>
+</html>
