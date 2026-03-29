@@ -35,18 +35,23 @@ if not os.path.exists(CSV_FILE):
 # --- Email function using msmtp subprocess ---
 def send_moisture_alert(device_name, moisture_value):
     sender = "basillybarry@gmail.com"
-    recipient = "karonde.manav@gmail.com"
+    recipients = ["karonde.manav@gmail.com", "pratap.karonde@gmail.com", "rashmithk@gmail.com"]  # Add as many as you like
     subject = f"⚠️ Moisture Alert for {device_name}"
     body = f"Moisture level for {device_name} is too low: {moisture_value}%."
 
-    # Full email with headers
-    email_content = f"From: {sender}\nTo: {recipient}\nSubject: {subject}\n\n{body}"
+    # Create comma-separated string for the email header
+    to_header = ", ".join(recipients)
 
-    try:
-        subprocess.run(f'echo "{email_content}" | msmtp {recipient}', shell=True, check=True)
-        print(f"[EMAIL SENT] {device_name} moisture {moisture_value}%")
-    except subprocess.CalledProcessError as e:
-        print("[EMAIL ERROR]", e)
+    # Full email with headers
+    email_content = f"From: {sender}\nTo: {to_header}\nSubject: {subject}\n\n{body}"
+
+    # Send via msmtp to all recipients
+    for recipient in recipients:
+        try:
+            subprocess.run(f'echo "{email_content}" | msmtp {recipient}', shell=True, check=True)
+            print(f"[EMAIL SENT] {device_name} moisture {moisture_value}% to {recipient}")
+        except subprocess.CalledProcessError as e:
+            print("[EMAIL ERROR]", e)
 
 # --- Routes ---
 @app.route('/data', methods=['POST'])
