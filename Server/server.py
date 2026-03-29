@@ -22,6 +22,10 @@ MOISTURE_OK_HIGH = 70
 EMAIL_COOLDOWN = 10
 last_alert_time = {}
 
+# --- Configure your emails here ---
+SENDER_EMAIL = "basillybarry@gmail.com"        # Gmail configured with msmtp
+RECIPIENT_EMAIL = "karonde.manav@gmail.com"      # Email to receive alerts
+
 # Ensure CSV exists
 if not os.path.exists(CSV_FILE):
     with open(CSV_FILE, "w", newline="") as f:
@@ -30,14 +34,10 @@ if not os.path.exists(CSV_FILE):
 
 # --- Email function using msmtp subprocess ---
 def send_moisture_alert(device_name, moisture_value):
-    sender = "yourpotemail@gmail.com"       # Replace with your sending email
-    recipient = "recipient@example.com"     # Replace with recipient email
     subject = f"⚠️ Moisture Alert for {device_name}"
     body = f"Moisture level for {device_name} is too low: {moisture_value}%."
 
-    # Construct shell command for msmtp
-    cmd = f'echo "{body}" | msmtp --subject="{subject}" --from={sender} {recipient}'
-
+    cmd = f'echo "{body}" | msmtp --subject="{subject}" --from={SENDER_EMAIL} {RECIPIENT_EMAIL}'
     try:
         subprocess.run(cmd, shell=True, check=True)
         print(f"[EMAIL SENT] {device_name} moisture {moisture_value}%")
