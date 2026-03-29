@@ -1,79 +1,37 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>IoT Planter Data</title>
-
+    <title>IoT Planter Full Data</title>
     <style>
-        body {
-            font-family: Arial;
-            margin: 20px;
-            text-align: center;
-        }
-
-        a {
-            margin: 10px;
-            display: inline-block;
-        }
-
-        table {
-            border-collapse: collapse;
-            width: 100%;
-        }
-
-        th, td {
-            border: 1px solid #ddd;
-            padding: 8px;
-            text-align: center;
-        }
-
-        th {
-            background-color: #f2f2f2;
-        }
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        table { border-collapse: collapse; width: 100%; }
+        th, td { border: 1px solid #ddd; padding: 8px; text-align: center; }
+        th { background-color: #f2f2f2; }
+        a { display: inline-block; margin-bottom: 20px; }
     </style>
 </head>
-
 <body>
-
-<h1>📋 IoT Planter Data</h1>
-
-<a href="/">Home</a> | 
-<a href="/data-view">Data Table</a>
-
-<table>
-    <tr>
-        <th>Time</th>
-        <th>Device</th>
-        <th>Battery (V)</th>
-        <th>Solar (V)</th>
-        <th>Moisture (%)</th>
-    </tr>
-    <tbody id="data-body"></tbody>
-</table>
-
-<script>
-async function loadData() {
-    let res = await fetch('/data');
-    let data = await res.json();
-
-    let tbody = document.getElementById('data-body');
-    tbody.innerHTML = "";
-
-    data.forEach(entry => {
-        let row = `<tr>
-            <td>${entry.timestamp}</td>
-            <td>${entry.device_name}</td>
-            <td>${entry.battery_voltage}</td>
-            <td>${entry.solar_voltage}</td>
-            <td>${entry.moisture_percentage}</td>
-        </tr>`;
-        tbody.innerHTML += row;
-    });
-}
-
-// Refresh every 2 seconds
-setInterval(loadData, 2000);
-loadData();
-</script>
-
+    <h1>Full IoT Planter Data</h1>
+    <a href="/">← Back to Dashboard</a>
+    <table>
+        <tr>
+            <th>Time</th>
+            <th>Device</th>
+            <th>Battery (V)</th>
+            <th>Solar (V)</th>
+            <th>Moisture (%)</th>
+        </tr>
+        <tbody>
+            {% for row in data %}
+            <tr>
+                <td>{{ row.timestamp }}</td>
+                <td>{{ row.device_name }}</td>
+                <td>{{ row.battery_voltage }}</td>
+                <td>{{ row.solar_voltage }}</td>
+                <td>{{ row.moisture_percentage }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
 </body>
 </html>
