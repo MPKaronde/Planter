@@ -34,12 +34,16 @@ if not os.path.exists(CSV_FILE):
 
 # --- Email function using msmtp subprocess ---
 def send_moisture_alert(device_name, moisture_value):
+    sender = "basillybarry@gmail.com"
+    recipient = "karonde.manav@gmail.com"
     subject = f"⚠️ Moisture Alert for {device_name}"
     body = f"Moisture level for {device_name} is too low: {moisture_value}%."
 
-    cmd = f'echo "{body}" | msmtp --subject="{subject}" --from={SENDER_EMAIL} {RECIPIENT_EMAIL}'
+    # Full email with headers
+    email_content = f"From: {sender}\nTo: {recipient}\nSubject: {subject}\n\n{body}"
+
     try:
-        subprocess.run(cmd, shell=True, check=True)
+        subprocess.run(f'echo "{email_content}" | msmtp {recipient}', shell=True, check=True)
         print(f"[EMAIL SENT] {device_name} moisture {moisture_value}%")
     except subprocess.CalledProcessError as e:
         print("[EMAIL ERROR]", e)
