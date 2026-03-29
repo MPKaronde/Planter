@@ -1,37 +1,77 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>IoT Planter Full Data</title>
+    <title>Plant Dashboard</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
-        body { font-family: Arial, sans-serif; margin: 20px; }
-        table { border-collapse: collapse; width: 100%; }
-        th, td { border: 1px solid #ddd; padding: 8px; text-align: center; }
-        th { background-color: #f2f2f2; }
-        a { display: inline-block; margin-bottom: 20px; }
+        body { font-family: Arial; text-align: center; margin: 20px; }
+        a { margin: 10px; display: inline-block; font-size: 18px; }
+        h1 { margin-bottom: 10px; }
+        #alert { font-size: 40px; font-weight: bold; color: white; padding: 20px; margin: 20px auto; width: 80%; display: block; border-radius: 8px; }
+        @keyframes flash { 0% { opacity: 1; } 50% { opacity: 0.2; } 100% { opacity: 1; } }
+        .chart-container { width: 90%; height: 400px; margin: 40px auto; }
+        canvas { width: 100% !important; height: 100% !important; }
     </style>
 </head>
 <body>
-    <h1>Full IoT Planter Data</h1>
-    <a href="/">← Back to Dashboard</a>
-    <table>
-        <tr>
-            <th>Time</th>
-            <th>Device</th>
-            <th>Battery (V)</th>
-            <th>Solar (V)</th>
-            <th>Moisture (%)</th>
-        </tr>
-        <tbody>
-            {% for row in data %}
-            <tr>
-                <td>{{ row.timestamp }}</td>
-                <td>{{ row.device_name }}</td>
-                <td>{{ row.battery_voltage }}</td>
-                <td>{{ row.solar_voltage }}</td>
-                <td>{{ row.moisture_percentage }}</td>
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
+<h1>🌱 Plant Monitor Dashboard</h1>
+<a href="/">Home</a> | <a href="/data-view">Data Table</a>
+<div id="alert">Loading...</div>
+<div class="chart-container">
+    <canvas id="solarChart"></canvas>
+</div>
+<div class="chart-container">
+    <canvas id="moistureChart"></canvas>
+</div>
+<script>
+const MOISTURE_TOO_LOW = 30;
+const MOISTURE_WARNING = 40;
+const MOISTURE_OK_LOW = 40;
+const MOISTURE_OK_HIGH = 70;
+const MOISTURE_TOO_HIGH = 70;
+let solarChart, moistureChart;
+
+async function loadData() {
+    const res = await fetch('/data');
+    const data = await res.json();
+    if (data.length === 0) return;
+
+    const times = data.map(d => d.timestamp);
+    const solar = data.map(d => d.solar_voltage);
+    const moisture = data.map(d => d.moisture_percentage);
+
+    // Banner
+    const latestMoisture = moisture[moisture.length-1];
+    const alertBox = document.getElementById("alert");
+    if (latestMoisture < MOISTURE_TOO_LOW) {
+        alertBox.textContent = "⚠️ TOO DRY ⚠️"; alertBox.style.background = "red"; alertBox.style.color = "white"; alertBox.style.animation = "flash 1s infinite";
+    } else if (latestMoisture > MOISTURE_TOO_HIGH) {
+        alertBox.textContent = "⚠️ TOO WET ⚠️"; alertBox.style.background = "red"; alertBox.style.color = "white"; alertBox.style.animation = "flash 1s infinite";
+    } else if (latestMoisture < MOISTURE_WARNING) {
+        alertBox.textContent = "⚠️ LOW MOISTURE ⚠️"; alertBox.style.background = "yellow"; alertBox.style.color = "black"; alertBox.style.animation = "none";
+    } else {
+        alertBox.textContent = "✅ AOK"; alertBox.style.background = "green"; alertBox.style.color = "white"; alertBox.style.animation = "none";
+    }
+
+    // Solar chart
+    if (!solarChart) {
+        solarChart = new Chart(document.getElementById('solarChart'), {
+            type: 'line', data: { labels: times, datasets: [{ label: 'Solar Voltage (V)', data: solar, borderColor: 'orange', borderWidth: 2, tension: 0.3, fill: false }] },
+            options: { responsive: true, maintainAspectRatio: false }
+        });
+    } else { solarChart.data.labels = times; solarChart.data.datasets[0].data = solar; solarChart.update(); }
+
+    // Moisture chart
+    if (!moistureChart) {
+        moistureChart = new Chart(document.getElementById('moistureChart'), {
+            type: 'line', data: { labels: times, datasets: [{ label: 'Moisture (%)', data: moisture, borderColor: 'blue', borderWidth: 2, tension: 0.3, fill: false }] },
+            options: { responsive: true, maintainAspectRatio: false }
+        });
+    } else { moistureChart.data.labels = times; moistureChart.data.datasets[0].data = moisture; moistureChart.update(); }
+}
+
+setInterval(loadData, 2000);
+loadData();
+</script>
 </body>
 </html>
